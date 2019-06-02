@@ -1,13 +1,27 @@
 /*
-AD7794.h - Library for using the AD7794 ADC
-Created by Jaimy Juliano, December 28, 2010
+JJ_AD7794.h - Library for using the AD7794 ADC
+Original created by Jaimy Juliano, December 28, 2010
 
-UPDATED 2-2018 include SPI transactions and tested on SAMD21 and Teensy 3.2
-UPDATED 4-7-18 V02 - Lots of changes, WIP
+Copyright (C) 2010,2019  Jaimy Juliano
+
+This file is part of the JJ_AD7794 library.
+
+This library is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 2 of the License, or
+(at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef Ad7794V_02_h
-#define Ad7794V_02_h
+#ifndef JJ_AD7794_h
+#define JJ_AD7794_h
 
 #include <SPI.h>
 
@@ -31,23 +45,10 @@ struct channelSettings
   float offset = 0.0;
 };
 
-// class ChannelClass
-// {
-//   public:
-//     uint8_t gain       = 1;
-//     bool isBuffered = true;
-//     bool isUnipolar = false;
-//     bool isEnabled  = true;
-//
-//     setBipolar(bool isBipolar);
-//     setGain(uint8_t gain);
-//   protected:
-// }
 
 class AD7794
 {
-  // friend class ChannelClass;
-
+  
   public:
     AD7794(uint8_t csPin, uint32_t spiFrequency, double refVoltage);
     void begin();

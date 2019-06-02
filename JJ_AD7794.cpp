@@ -1,13 +1,26 @@
 /*
-AD7794.cpp - Library for using the AD7794 ADC
-Created by Jaimy Juliano, December 28, 2010
+JJ_AD7794.cpp - Library for using the AD7794 ADC
+Original created by Jaimy Juliano, December 28, 2010
 
-UPDATED 2-2018 include SPI transactions and tested on SAMD21 and Teensy 3.2
-UPDATED 4-7-18 V02 - Lots of changes, WIP
+Copyright (C) 2010,2019  Jaimy Juliano
 
+This file is part of the JJ_AD7794 library.
+
+This library is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 2 of the License, or
+(at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "Ad7794_V02.h"
+#include "JJ_AD7794.h"
 #include <SPI.h>
 
 
@@ -272,27 +285,6 @@ float AD7794::offset(uint8_t ch)
   return Channel[ch].offset;
 }
 
-/* getReadingVolts - Depreciated
-   This member is going to go away, just leaving it here for
-   now for backward compatibility
-*/
-// float AD7794::getReadingVolts(uint8_t ch)
-// {
-//   //Lets the conversion result
-//   unsigned long adcRaw = getReadingRaw(ch);
-//
-//   if(ch == 6){ //Channel 6 is temperature, handle it differently 1.17 V internal Ref
-//     return (((float)adcRaw / ADC_MAX_BP - 1) * 1.17); //Bipolar, not sure what mode for temp sensor
-//   }
-//
-//   //And convert to Volts, note: no error checking
-//   if(Channel[currentCh].isUnipolar){
-//     return (adcRaw * vRef) / (ADC_MAX_UP * Channel[currentCh].gain); //Unipolar formula
-//   }
-//   else{
-//     return (((float)adcRaw / ADC_MAX_BP - 1) * vRef) / Channel[currentCh].gain; //Bipolar formula
-//   }
-// }
 
 // This function is BLOCKING. I'm not sure if it is even possible to make a
 // non blocking version with this chip on a shared SPI bus.
@@ -313,16 +305,12 @@ uint32_t AD7794::getReadingRaw(uint8_t ch)
   #else
     while(digitalRead(MISO) == HIGH){
     //while(digitalRead(12) == HIGH){ //ESP8266 troubleshooting
-      if((millis() - t) >= convTimeout){
-        //return 999999; //added for trouble shooting 5-6-18
+      if((millis() - t) >= convTimeout){        
         //Serial.print("getReadingRaw Timeout");
         break;
       }  
     }
   #endif
-
-//  Serial.print("no poop");
-//  delay(10);
 
   uint32_t adcRaw = getConvResult();
 
@@ -359,7 +347,7 @@ void AD7794::startConv()
 //////// Private helper functions/////////////////
 void AD7794::buildConfReg(uint8_t ch)
 {
-  //Could the use of bitWrite be the problem with the ESP8266? -JJ 1-23-2019
+  //Could the use of bitWrite be the problem with the ESP8266? -JJ 1-23-2019 (UPDATE: No doesn't seem to matter)
   //prints added for troubleshooting
   // Serial.print(confReg,BIN);
   // Serial.print(' ');
