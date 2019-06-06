@@ -23,8 +23,6 @@
   along with this library. If not, see <http://www.gnu.org/licenses/>.
 */
 
-*/
-
 #include <SPI.h>
 #include "JJ_AD7794.h"
 

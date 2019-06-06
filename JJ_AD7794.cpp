@@ -41,8 +41,8 @@ AD7794::AD7794(uint8_t csPin, uint32_t spiFrequency, double refVoltage = 2.50)
   vRef = refVoltage;
 
   //Default register settings
-  modeReg = 0x2001;     //Single conversion mode, Fadc = 470Hz
-  confReg = 0x0010;     //CH 0 - Bipolar, Gain = 1, Input buffer enabled
+  modeReg = DEFAULT_MODE_REG;     //Single conversion mode, Fadc = 470Hz
+  confReg = DEFAULT_CONF_REG;     //CH 0 - Bipolar, Gain = 1, Input buffer enabled
 
   isSnglConvMode = true;
   
@@ -176,6 +176,14 @@ void AD7794::setConvMode(bool isSingle)
   }
 
   writeModeReg();
+}
+
+void AD7794::setVBias(uint8_t ch, bool isEnabled)
+{
+  setActiveCh(ch);
+  Channel[currentCh].vBiasEnabled = isEnabled;
+  buildConfReg(currentCh);
+  writeConfReg();
 }
 
 // OK, for now I'm not going to handle the spi transaction inside the startConversion()
@@ -345,20 +353,30 @@ void AD7794::startConv()
 
 
 //////// Private helper functions/////////////////
+
+//This has been changed and is untested
 void AD7794::buildConfReg(uint8_t ch)
 {
-  //Could the use of bitWrite be the problem with the ESP8266? -JJ 1-23-2019 (UPDATE: No doesn't seem to matter)
   //prints added for troubleshooting
   // Serial.print(confReg,BIN);
   // Serial.print(' ');
+
+  confReg = DEFAULT_CONF_REG; //wipe it back to default
 
   confReg = (getGainBits(Channel[currentCh].gain) << 8) | ch;
 
   // Serial.print(confReg,BIN);
   // Serial.print(' ');
 
-  bitWrite(confReg,12,Channel[currentCh].isUnipolar);
-  bitWrite(confReg,4,Channel[currentCh].isBuffered);
+  if(Channel[currentCh].vBiasEnabled && (currentCh < 3)){
+    uint8_t biasBits = currentCh + 1; 
+    confReg |= (biasBits << 14);
+  }
+
+  //bitWrite(confReg,12,Channel[currentCh].isUnipolar);
+  //bitWrite(confReg,4,Channel[currentCh].isBuffered);
+  confReg |= (Channel[currentCh].isUnipolar << 12);
+  confReg |= (Channel[currentCh].isBuffered << 4);
 
   // Serial.int(confReg,BIN);
   // Serial.int(' ');

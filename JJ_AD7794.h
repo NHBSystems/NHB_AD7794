@@ -30,6 +30,10 @@ along with this library.  If not, see <http://www.gnu.org/licenses/>.
 #define WRITE_MODE_REG 0x08 //selects mode reg for writing
 #define WRITE_CONF_REG 0x10 //selects conf reg for writing
 #define READ_DATA_REG  0x58 //selects data reg for reading
+
+#define DEFAULT_MODE_REG  0x2001     //Single conversion mode, Fadc = 470Hz
+#define DEFAULT_CONF_REG  0x0010     //CH 0 - Bipolar, Gain = 1, Input buffer enabled
+  
 #define ADC_MAX_UP     16777216
 #define ADC_MAX_BP     8388608
 //#define READ_DELAY     10   //delay (in mS) to wait for conversion
@@ -42,6 +46,7 @@ struct channelSettings
   bool isBuffered = true;
   bool isUnipolar = false;
   bool isEnabled  = false;
+  bool vBiasEnabled = false;
   float offset = 0.0;
 };
 
@@ -58,6 +63,7 @@ class AD7794
     void setInputBuffer(uint8_t ch, bool enabled);
     void setGain(uint8_t ch, uint8_t gain);
     void setEnabled(uint8_t ch, bool enabled);
+    void setVBias(uint8_t ch, bool enabled);
 
     //void setUpdateRate(uint8_t bitMask);
     void setUpdateRate(double rate);
