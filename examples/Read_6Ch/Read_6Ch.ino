@@ -78,7 +78,7 @@ void setup() {
     adc.setEnabled(i,true);
     //delay(2);
   }
-  
+   
 
   delay(100);  
   
