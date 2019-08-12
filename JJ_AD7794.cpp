@@ -41,8 +41,8 @@ AD7794::AD7794(uint8_t csPin, uint32_t spiFrequency, double refVoltage = 2.50)
   vRef = refVoltage;
 
   //Default register settings
-  modeReg = 0x2001;     //Single conversion mode, Fadc = 470Hz
-  confReg = 0x0010;     //CH 0 - Bipolar, Gain = 1, Input buffer enabled
+  modeReg = DEFAULT_MODE_REG;     //Single conversion mode, Fadc = 470Hz
+  confReg = DEFAULT_CONF_REG;     //CH 0 - Bipolar, Gain = 1, Input buffer enabled
 
   isSnglConvMode = true;
   
@@ -137,8 +137,8 @@ void AD7794::setUpdateRate(double rate)
   else if(rate > 10 && rate <= 12.5)
     {bitMask = 0x0B;}
   else if(rate > 12.5 && rate <= 16.7)
-    {bitMask = 0x0A;}     //This ones wierd 0x0A = 80 dB(50Hz)
-    //{bitMask = 0x09;}   //or 0x09 = 65 dB(50Hx and 60Hz)
+    //{bitMask = 0x0A;}     //This ones wierd 0x0A = 80 dB(50Hz)
+    {bitMask = 0x09;}   //or 0x09 = 65 dB(50Hx and 60Hz)
   else if(rate > 16.7 && rate <= 19.6)
     {bitMask = 0x08;}
   else if(rate > 19.6 && rate <= 33.2)
@@ -176,6 +176,29 @@ void AD7794::setConvMode(bool isSingle)
   }
 
   writeModeReg();
+}
+
+//Enable internal bias voltage for specified channel
+void AD7794::setVBias(uint8_t ch, bool isEnabled)
+{
+  setActiveCh(ch);
+  Channel[currentCh].vBiasEnabled = isEnabled;
+  buildConfReg(currentCh);
+  writeConfReg();
+}
+
+//Set the votage reference source for the specified channel
+void AD7794::setRefMode(uint8_t ch, uint8_t mode){
+  
+  setActiveCh(ch);
+
+  //Only 1 -3 are valid
+  if(mode < 4){ 
+    Channel[currentCh].refMode = mode;
+    buildConfReg(currentCh);
+    writeConfReg();
+  }
+
 }
 
 // OK, for now I'm not going to handle the spi transaction inside the startConversion()
@@ -241,8 +264,9 @@ float AD7794::read(uint8_t ch)
   //Serial.print(' ');
   float result;
 
-  if(ch == 6){ //Channel 6 is temperature, handle it differently 1.17 V internal Ref
-    return (((float)adcRaw / ADC_MAX_BP - 1) * 1.17); //Bipolar, not sure what mode for temp sensor
+  if(ch == 6){ //Channel 6 is temperature, handle it differently due to 1.17 V internal Ref
+    //return (((float)adcRaw / ADC_MAX_BP - 1) * 1.17)*100; //Bipolar, not sure what mode for temp sensor
+    return TempSensorRawToDegC(adcRaw);    
   }
 
   //And convert to Volts, note: no error checking
@@ -258,6 +282,15 @@ float AD7794::read(uint8_t ch)
   return result - Channel[currentCh].offset;
 }
 
+/* Convert AD7794X on-chip temp sensor readings to Deg C */
+float AD7794::TempSensorRawToDegC(uint32_t rawData)  {
+        float volts = ((float)rawData - 0x800000) * (INTERNAL_REF_V / ADC_MAX_BP);
+        float degK = volts/0.00081; //Sensitivity = 0.81 mv/DegC
+        float degC = degK - 273;
+        //float degF = (degC * 9 / 5) + 32;        
+        return(degC);
+}
+
 /* zero - Record offsets to apply to the channel (if active) */
 void AD7794::zero(uint8_t ch)
 {
@@ -267,8 +300,8 @@ void AD7794::zero(uint8_t ch)
   }                                               //for both unipolar and bipolar modes
 }
 
-/* zero - Record offsets to apply to all active internal
-   channels. (not temperature an AVDD monitor)
+/* zero - Record offsets to apply to all active
+   channels. (NOT temperature an AVDD monitor)
 */
 void AD7794::zero()
 {
@@ -301,7 +334,7 @@ uint32_t AD7794::getReadingRaw(uint8_t ch)
   uint32_t t = millis();
 
   #if defined (ESP8266) //Workaround until I figure out how to read the MISO pin status on the ESP8266
-    delay(6);           //This delay is only appropriate for the fastest rate (470 Hz)
+    delay(10);           //This delay is only appropriate for the fastest rate (470 Hz)
   #else
     while(digitalRead(MISO) == HIGH){
     //while(digitalRead(12) == HIGH){ //ESP8266 troubleshooting
@@ -345,20 +378,32 @@ void AD7794::startConv()
 
 
 //////// Private helper functions/////////////////
+
+//This has been changed and is untested
 void AD7794::buildConfReg(uint8_t ch)
 {
-  //Could the use of bitWrite be the problem with the ESP8266? -JJ 1-23-2019 (UPDATE: No doesn't seem to matter)
   //prints added for troubleshooting
   // Serial.print(confReg,BIN);
   // Serial.print(' ');
+
+  confReg = DEFAULT_CONF_REG; //wipe it back to default
 
   confReg = (getGainBits(Channel[currentCh].gain) << 8) | ch;
 
   // Serial.print(confReg,BIN);
   // Serial.print(' ');
 
-  bitWrite(confReg,12,Channel[currentCh].isUnipolar);
-  bitWrite(confReg,4,Channel[currentCh].isBuffered);
+  if(Channel[currentCh].vBiasEnabled && (currentCh < 3)){
+    uint8_t biasBits = currentCh + 1; 
+    confReg |= (biasBits << 14);
+    confReg |= (1 << 11); //Lets also set the boost bit
+  }
+  
+  confReg |= (Channel[currentCh].isUnipolar << 12);
+  confReg |= (Channel[currentCh].isBuffered << 4);
+
+  //Set reference select bits
+  confReg |= (Channel[currentCh].refMode << 6);
 
   // Serial.int(confReg,BIN);
   // Serial.int(' ');

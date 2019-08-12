@@ -30,9 +30,14 @@ along with this library.  If not, see <http://www.gnu.org/licenses/>.
 #define WRITE_MODE_REG 0x08 //selects mode reg for writing
 #define WRITE_CONF_REG 0x10 //selects conf reg for writing
 #define READ_DATA_REG  0x58 //selects data reg for reading
+
+#define DEFAULT_MODE_REG  0x2001     //Single conversion mode, Fadc = 470Hz
+#define DEFAULT_CONF_REG  0x0010     //CH 0 - Bipolar, Gain = 1, Input buffer enabled
+  
 #define ADC_MAX_UP     16777216
 #define ADC_MAX_BP     8388608
 //#define READ_DELAY     10   //delay (in mS) to wait for conversion
+#define INTERNAL_REF_V 1.17
 
 
 struct channelSettings
@@ -42,6 +47,8 @@ struct channelSettings
   bool isBuffered = true;
   bool isUnipolar = false;
   bool isEnabled  = false;
+  bool vBiasEnabled = false;
+  uint8_t refMode = 0;
   float offset = 0.0;
 };
 
@@ -58,6 +65,8 @@ class AD7794
     void setInputBuffer(uint8_t ch, bool enabled);
     void setGain(uint8_t ch, uint8_t gain);
     void setEnabled(uint8_t ch, bool enabled);
+    void setVBias(uint8_t ch, bool enabled);
+    void setRefMode(uint8_t ch, uint8_t mode);
 
     //void setUpdateRate(uint8_t bitMask);
     void setUpdateRate(double rate);
@@ -65,6 +74,7 @@ class AD7794
 
     uint32_t getReadingRaw(uint8_t ch);
     //float getReadingVolts(uint8_t ch);
+    float TempSensorRawToDegC(unsigned long rawData);
 
     void read(float *buf, uint8_t bufSize); //experimental
     float read(uint8_t ch);
@@ -81,6 +91,8 @@ class AD7794
     void buildConfReg(uint8_t ch);
     void setActiveCh(uint8_t ch);
     uint8_t getGainBits(uint8_t gain);
+
+    
 
     uint8_t CS;
     uint8_t currentCh;
