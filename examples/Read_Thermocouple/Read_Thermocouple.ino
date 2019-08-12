@@ -1,9 +1,13 @@
 /*
   6 Channel Full bridge feather board example
 
-  Reads all 6 channels and prints out on Serial. The readings are done
-  in bipolar mode with a gain of 128. This would be appropriate for
-  most full bridge type sensors like load cells and pressure gauges
+  This example reads a K-Type thermocouple on channel 0 and does
+  does cold junction compensation using the integrated temperature
+  senor in the AD7794.
+
+  2 x 1 MOhm bias resistors are needed for this example to work correctly.
+  1 between the GND terminal and the TC- terminal and 1 between the EXV(+)
+  terminal and the TC+ terminal. (See diagram that should be with this file)
 
   Copyright (C) 2019  Jaimy Juliano
 
@@ -76,8 +80,9 @@ void setup() {
   while(!Serial);
  
   pinMode(AD7794_CS, OUTPUT); //Need to do this
-  pinMode(EX_EN_PIN, OUTPUT);
 
+  //Only needed if Jumper configured for EX control
+  //pinMode(EX_EN_PIN, OUTPUT);
   //digitalWrite(EX_EN_PIN,LOW);  //low  = 2.5 Vex ON
 
   adc.begin();
@@ -87,9 +92,7 @@ void setup() {
   adc.setUpdateRate(19.6);
   
 
-  adc.setBipolar(TC_ADC_CHANNEL,true);
-  //adc.setRefMode(TC_ADC_CHANNEL,2);     //Mode 2 = Internal 1.17V ref
-  //adc.setVBias(TC_ADC_CHANNEL,true);
+  adc.setBipolar(TC_ADC_CHANNEL,true);  
   adc.setGain(TC_ADC_CHANNEL,32);
   adc.setEnabled(TC_ADC_CHANNEL,true);
 
