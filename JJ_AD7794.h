@@ -45,7 +45,7 @@ struct channelSettings
   //Set some defaults
   uint8_t gain       = 1;
   bool isBuffered = true;
-  bool isUnipolar = false;
+  bool isBipolar = true;
   bool isEnabled  = false;
   bool vBiasEnabled = false;
   uint8_t refMode = 0;
@@ -62,7 +62,7 @@ class AD7794
     void reset();
 
     void setBipolar(uint8_t ch, bool isBipolar);
-    void setInputBuffer(uint8_t ch, bool enabled);
+    void setInputBuffer(uint8_t ch, bool isBuffered);
     void setGain(uint8_t ch, uint8_t gain);
     void setEnabled(uint8_t ch, bool enabled);
     void setVBias(uint8_t ch, bool enabled);
@@ -88,7 +88,7 @@ class AD7794
     uint32_t getConvResult();
     void writeConfReg();
     void writeModeReg();
-    void buildConfReg(uint8_t ch);
+    void buildConfReg();
     void setActiveCh(uint8_t ch);
     uint8_t getGainBits(uint8_t gain);
 

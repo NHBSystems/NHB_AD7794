@@ -86,21 +86,21 @@ void AD7794::reset()
 void AD7794::setBipolar(uint8_t ch, bool isBipolar)
 {
   setActiveCh(ch);
-  Channel[currentCh].isUnipolar = false;
-  buildConfReg(currentCh);
+  Channel[currentCh].isBipolar = isBipolar;
+  buildConfReg();
   writeConfReg();
 }
 
-void AD7794::setInputBuffer(uint8_t ch, bool enabled)
+void AD7794::setInputBuffer(uint8_t ch, bool isBuffered)
 {
-  //TODO: Something ;)
+  Channel[currentCh].isBuffered = isBuffered;
 }
 
 void AD7794::setGain(uint8_t ch, uint8_t gain)
 {
   setActiveCh(ch);
   Channel[currentCh].gain = gain;
-  buildConfReg(currentCh);
+  buildConfReg();
   writeConfReg();
 }
 
@@ -183,7 +183,7 @@ void AD7794::setVBias(uint8_t ch, bool isEnabled)
 {
   setActiveCh(ch);
   Channel[currentCh].vBiasEnabled = isEnabled;
-  buildConfReg(currentCh);
+  buildConfReg();
   writeConfReg();
 }
 
@@ -195,7 +195,7 @@ void AD7794::setRefMode(uint8_t ch, uint8_t mode){
   //Only 1 -3 are valid
   if(mode < 4){ 
     Channel[currentCh].refMode = mode;
-    buildConfReg(currentCh);
+    buildConfReg();
     writeConfReg();
   }
 
@@ -270,7 +270,7 @@ float AD7794::read(uint8_t ch)
   }
 
   //And convert to Volts, note: no error checking
-  if(Channel[currentCh].isUnipolar){
+  if(!Channel[currentCh].isBipolar){
     result = (adcRaw * vRef) / (ADC_MAX_UP * Channel[currentCh].gain);            //Unipolar formula
     //Serial.print("unipolar");
   }
@@ -355,7 +355,7 @@ void AD7794::setActiveCh(uint8_t ch)
 {
   if(ch < CHANNEL_COUNT){
     currentCh = ch;
-    buildConfReg(currentCh);
+    buildConfReg();
     writeConfReg();
   }
 }
@@ -380,7 +380,7 @@ void AD7794::startConv()
 //////// Private helper functions/////////////////
 
 //This has been changed and is untested
-void AD7794::buildConfReg(uint8_t ch)
+void AD7794::buildConfReg()
 {
   //prints added for troubleshooting
   // Serial.print(confReg,BIN);
@@ -388,22 +388,31 @@ void AD7794::buildConfReg(uint8_t ch)
 
   confReg = DEFAULT_CONF_REG; //wipe it back to default
 
-  confReg = (getGainBits(Channel[currentCh].gain) << 8) | ch;
+  confReg = (getGainBits(Channel[currentCh].gain) << 8) | currentCh;
 
-  // Serial.print(confReg,BIN);
-  // Serial.print(' ');
-
+  // Serial.print(currentCh);
+  // Serial.print("confReg: ");
+  // Serial.println(confReg,BIN);
+  
   if(Channel[currentCh].vBiasEnabled && (currentCh < 3)){
     uint8_t biasBits = currentCh + 1; 
     confReg |= (biasBits << 14);
     confReg |= (1 << 11); //Lets also set the boost bit
   }
   
-  confReg |= (Channel[currentCh].isUnipolar << 12);
+  confReg |= (!Channel[currentCh].isBipolar << 12);
   confReg |= (Channel[currentCh].isBuffered << 4);
 
   //Set reference select bits
   confReg |= (Channel[currentCh].refMode << 6);
+
+  // Serial.print(currentCh);
+  // Serial.print(" Gain: ");
+  // Serial.print(Channel[currentCh].gain);
+  // Serial.print(" gainBits: ");
+  // Serial.print(getGainBits(Channel[currentCh].gain));
+  // Serial.print(" confReg: ");
+  // Serial.println(confReg,BIN);
 
   // Serial.int(confReg,BIN);
   // Serial.int(' ');
@@ -447,7 +456,7 @@ void AD7794::writeModeReg()
 
 byte AD7794::getGainBits(uint8_t gain)
 {
-  uint8_t gainBits;
+  uint8_t gainBits = 0;
 
   switch(gain){
     case 1:
