@@ -286,18 +286,19 @@ float AD7794::read(uint8_t ch)
 float AD7794::TempSensorRawToDegC(uint32_t rawData)  {
         float volts = ((float)rawData - 0x800000) * (INTERNAL_REF_V / ADC_MAX_BP);
         float degK = volts/0.00081; //Sensitivity = 0.81 mv/DegC
-        float degC = degK - 273;
-        //float degF = (degC * 9 / 5) + 32;        
+        float degC = degK - 273;                
         return(degC);
 }
 
 /* zero - Record offsets to apply to the channel (if active) */
 void AD7794::zero(uint8_t ch)
-{
+{  
+  
   if(Channel[ch].isEnabled == true){
-    Channel[ch].offset = read(ch);
-    //Channel[ch].offset = adc.getReadingRaw(ch); //Have to test this, not sure if it will work as expected
-  }                                               //for both unipolar and bipolar modes
+    read(ch); //Take a through away reading first -workaround
+    
+    Channel[ch].offset = read(ch);    
+  }
 }
 
 /* zero - Record offsets to apply to all active
@@ -305,6 +306,8 @@ void AD7794::zero(uint8_t ch)
 */
 void AD7794::zero()
 {
+  read(0); //Take a through away reading first -workaround
+
   for(int i = 0;  i < CHANNEL_COUNT-2 ; i++){
     zero(i);
   }

@@ -74,7 +74,7 @@ class AD7794
 
     uint32_t getReadingRaw(uint8_t ch);
     //float getReadingVolts(uint8_t ch);
-    float TempSensorRawToDegC(unsigned long rawData);
+    float TempSensorRawToDegC(uint32_t rawData);
 
     void read(float *buf, uint8_t bufSize); //experimental
     float read(uint8_t ch);
