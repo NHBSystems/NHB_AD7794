@@ -30,13 +30,14 @@
   #define AD7794_CS   16 //<- Should try this on 15 again
   #define EX_EN_PIN    0
 #else
+  
   //Teensy 3.2 on Feather adapter
-  #define AD7794_CS    3 
-  #define EX_EN_PIN    9
+  // #define AD7794_CS    3 
+  // #define EX_EN_PIN    9
 
-  //Some Other board
-  //#define AD7794_CS  _  
-  //#define EX_EN_PIN  _  
+  //Fether M0 Basic Proto
+  #define AD7794_CS  10  
+  #define EX_EN_PIN  9  
   
 #endif
 
@@ -53,11 +54,11 @@ AD7794 adc(AD7794_CS, 1000000, 2.50);
 float readings[8], offsets[8]; //6 channels + temp and AVDD monitor
 
 void setup() {
-  // put your setup code here, to run once:
+  
    Serial.begin(115200);
-   //adc.begin(); //Added while troubleshooting - 5-6-18
+   
 
-   while(!Serial);
+  while(!Serial);
  
   pinMode(AD7794_CS, OUTPUT); //Need to do this
   pinMode(EX_EN_PIN, OUTPUT);
@@ -83,12 +84,7 @@ void setup() {
   delay(100);  
   
   //get readings and auto zero on startup
-  //It seems that I have to take a throw away reading first to get a
-  //decent offset value. I need to figure out why that is. -JJ 05-17-18
-  
-  double junk = adc.read(0);
-  delay(10);
-  
+    
   adc.zero(); //Zero out all channels
 
 }
