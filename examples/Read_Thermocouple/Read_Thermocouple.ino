@@ -28,7 +28,7 @@
 */
 
 #include <SPI.h>
-#include "JJ_AD7794.h"
+#include "NHB_AD7794.h"
 
 //You need to set the pins for your Feather here
 //EX_EN_PIN only matters if you have configured the

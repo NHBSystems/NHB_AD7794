@@ -24,7 +24,7 @@
 */
 
 #include <SPI.h>
-#include "JJ_AD7794.h"
+#include "NHB_AD7794.h"
 
 #if defined (ESP8266)
   #define AD7794_CS   16 //<- Should try this on 15 again
