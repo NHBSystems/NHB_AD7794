@@ -9,11 +9,11 @@
   1 between the GND terminal and the TC- terminal and 1 between the EXV(+)
   terminal and the TC+ terminal. (See diagram that should be with this file)
 
-  This file is part of the JJ_AD7794 library.
+  This file is part of the NHB_AD7794 library.
 
   MIT License
 
-  Copyright (C) 2010,2019  Jaimy Juliano, NHBSystems
+  Copyright (C) 2010,2019  Jaimy Juliano
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal

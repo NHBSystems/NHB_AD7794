@@ -1,8 +1,8 @@
 /*
-  JJ_AD7794.cpp - Library for using the AD7794 ADC
+  NHB_AD7794.cpp - Library for using the AD7794 ADC
   Original created by Jaimy Juliano, December 28, 2010
 
-  This file is part of the JJ_AD7794 library.
+  This file is part of the NHB_AD7794 library.
 
   MIT License
 
@@ -27,7 +27,7 @@
   SOFTWARE.
 */
 
-#include "JJ_AD7794.h"
+#include "NHB_AD7794.h"
 #include <SPI.h>
 
 
