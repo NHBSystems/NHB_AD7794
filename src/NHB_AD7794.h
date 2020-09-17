@@ -32,19 +32,23 @@
 
 #include <SPI.h>
 
-#define CHANNEL_COUNT  8 //6 + temp and AVDD Monitor
-//Communications register settings
-#define WRITE_MODE_REG 0x08 //selects mode reg for writing
-#define WRITE_CONF_REG 0x10 //selects conf reg for writing
-#define READ_DATA_REG  0x58 //selects data reg for reading
+#define AD7794_CHANNEL_COUNT           8    //6 + temp and AVDD Monitor
 
-#define DEFAULT_MODE_REG  0x2001     //Single conversion mode, Fadc = 470Hz
-#define DEFAULT_CONF_REG  0x0010     //CH 0 - Bipolar, Gain = 1, Input buffer enabled
+//Communications register settings
+#define AD7794_WRITE_MODE_REG       0x08    //selects mode reg for writing
+#define AD7794_WRITE_CONF_REG       0x10    //selects conf reg for writing
+#define AD7794_READ_DATA_REG        0x58    //selects data reg for reading
+
+#define AD7794_DEFAULT_MODE_REG   0x2001    //Single conversion mode, Fadc = 470Hz
+#define AD7794_DEFAULT_CONF_REG   0x0010    //CH 0 - Bipolar, Gain = 1, Input buffer enabled
   
-#define ADC_MAX_UP     16777216
-#define ADC_MAX_BP     8388608
-//#define READ_DELAY     10   //delay (in mS) to wait for conversion
-#define INTERNAL_REF_V 1.17
+#define AD7794_ADC_MAX_UP     16777216
+#define AD7794_ADC_MAX_BP     8388608
+
+#define AD7794_INTERNAL_REF_V  1.17
+#define AD7794_REF_EXT_1          0
+#define AD7794_REF_EXT_2          1
+#define AD7794_REF_INT            2
 
 
 struct channelSettings
@@ -57,6 +61,7 @@ struct channelSettings
   bool vBiasEnabled = false;
   uint8_t refMode = 0;
   float offset = 0.0;
+  float vRef = AD7794_INTERNAL_REF_V;
 };
 
 
@@ -102,13 +107,10 @@ class AD7794
     
 
     uint8_t CS;
-    uint8_t currentCh;
-    //unsigned long frequency;
-    //uint8_t gain[3];
+    uint8_t currentCh;    
     float vRef;
-
-    //ChannelClass Channel[CHANNEL_COUNT];
-    channelSettings Channel[CHANNEL_COUNT];
+    
+    channelSettings Channel[AD7794_CHANNEL_COUNT];
     SPISettings spiSettings;
 
     uint16_t modeReg; //holds value for 16 bit mode register

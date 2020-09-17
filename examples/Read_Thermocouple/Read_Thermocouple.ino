@@ -3,11 +3,11 @@
 
   This example reads a K-Type thermocouple on channel 0 and does
   does cold junction compensation using the integrated temperature
-  senor in the AD7794.
+  sensor in the AD7794.
 
   2 x 1 MOhm bias resistors are needed for this example to work correctly.
-  1 between the GND terminal and the TC- terminal and 1 between the EXV(+)
-  terminal and the TC+ terminal. (See diagram that should be with this file)
+  1 between the GND (or VEX-) terminal and the TC- terminal and 1 between VCC
+  (or VEX+) terminal and the TC+ terminal. (See diagram in the extras folder)
 
   This file is part of the NHB_AD7794 library.
 

@@ -31,7 +31,7 @@
 #include <SPI.h>
 
 
-AD7794::AD7794(uint8_t csPin, uint32_t spiFrequency, double refVoltage = 2.50)
+AD7794::AD7794(uint8_t csPin, uint32_t spiFrequency, double refVoltage)
 {
   //pinMode(csPin, OUTPUT);
   CS = csPin;
@@ -44,14 +44,23 @@ AD7794::AD7794(uint8_t csPin, uint32_t spiFrequency, double refVoltage = 2.50)
     //Should be MODE3
     spiSettings = SPISettings(spiFrequency,MSBFIRST,SPI_MODE3); 
   #endif
-  
-  vRef = refVoltage;
+    
 
   //Default register settings
-  modeReg = DEFAULT_MODE_REG;     //Single conversion mode, Fadc = 470Hz
-  confReg = DEFAULT_CONF_REG;     //CH 0 - Bipolar, Gain = 1, Input buffer enabled
-
+  modeReg = AD7794_DEFAULT_MODE_REG;     //Single conversion mode, Fadc = 470Hz
+  confReg = AD7794_DEFAULT_CONF_REG;     //CH 0 - Bipolar, Gain = 1, Input buffer enabled  
   isSnglConvMode = true;
+
+
+  for(int i=0; i<AD7794_CHANNEL_COUNT-2; i++){
+    Channel[i].vRef = refVoltage;
+
+    if(refVoltage == AD7794_INTERNAL_REF_V){
+      Channel[i].refMode = AD7794_REF_INT;           
+    }
+  }
+
+  
   
 }
 
@@ -64,8 +73,9 @@ void AD7794::begin()
 
   //Apply the defaults that were set up in the constructor
   //Should add a begin(,,) method that lets you override the defaults
-  for(uint8_t i = 0; i < CHANNEL_COUNT-2; i++){ //<-- Channel count stuff needs to be handled better!!
+  for(uint8_t i = 0; i < AD7794_CHANNEL_COUNT-2; i++){ //<-- Channel count stuff needs to be handled better!!
     setActiveCh(i);
+    
     writeModeReg();
     writeConfReg();
   }
@@ -199,8 +209,8 @@ void AD7794::setRefMode(uint8_t ch, uint8_t mode){
   
   setActiveCh(ch);
 
-  //Only 1 -3 are valid
-  if(mode < 4){ 
+  //Only 0,1,2 are valid
+  if(mode < 3){ 
     Channel[currentCh].refMode = mode;
     buildConfReg();
     writeConfReg();
@@ -218,7 +228,7 @@ uint32_t AD7794::getConvResult()
   uint32_t result = 0;
 
   //SPI.beginTransaction(spiSettings); //We should still be in our transaction
-  SPI.transfer(READ_DATA_REG);
+  SPI.transfer(AD7794_READ_DATA_REG);
 
   //Read 24 bits one byte at a time, and put in an unsigned long
   inByte = SPI.transfer(0xFF); //dummy byte
@@ -244,7 +254,7 @@ void AD7794::read(float *buf, uint8_t bufSize)
 {
   uint8_t readingCnt = 0 ;
 
-  for(int i = 0;  i < CHANNEL_COUNT; i++){
+  for(int i = 0;  i < AD7794_CHANNEL_COUNT; i++){
     if(Channel[i].isEnabled){
       if(readingCnt < bufSize){
         buf[readingCnt] = read(i);
@@ -272,17 +282,17 @@ float AD7794::read(uint8_t ch)
   float result;
 
   if(ch == 6){ //Channel 6 is temperature, handle it differently due to 1.17 V internal Ref
-    //return (((float)adcRaw / ADC_MAX_BP - 1) * 1.17)*100; //Bipolar, not sure what mode for temp sensor
+    //return (((float)adcRaw / AD7794_ADC_MAX_BP - 1) * 1.17)*100; //Bipolar, not sure what mode for temp sensor
     return TempSensorRawToDegC(adcRaw);    
   }
 
   //And convert to Volts, note: no error checking
   if(!Channel[currentCh].isBipolar){
-    result = (adcRaw * vRef) / (ADC_MAX_UP * Channel[currentCh].gain);            //Unipolar formula
+    result = (adcRaw * Channel[currentCh].vRef) / (AD7794_ADC_MAX_UP * Channel[currentCh].gain);            //Unipolar formula
     //Serial.print("unipolar");
   }
   else{
-    result = (((float)adcRaw / ADC_MAX_BP - 1) * vRef) / Channel[currentCh].gain; //Bipolar formula    
+    result = (((float)adcRaw / AD7794_ADC_MAX_BP - 1) * Channel[currentCh].vRef) / Channel[currentCh].gain; //Bipolar formula    
     //Serial.print("bipolar");
   }
 
@@ -291,7 +301,7 @@ float AD7794::read(uint8_t ch)
 
 /* Convert AD7794X on-chip temp sensor readings to Deg C */
 float AD7794::TempSensorRawToDegC(uint32_t rawData)  {
-        float volts = ((float)rawData - 0x800000) * (INTERNAL_REF_V / ADC_MAX_BP);
+        float volts = ((float)rawData - 0x800000) * (AD7794_INTERNAL_REF_V / AD7794_ADC_MAX_BP);
         float degK = volts/0.00081; //Sensitivity = 0.81 mv/DegC
         float degC = degK - 273;                
         return(degC);
@@ -315,7 +325,7 @@ void AD7794::zero()
 {
   read(0); //Take a through away reading first -workaround
 
-  for(int i = 0;  i < CHANNEL_COUNT-2 ; i++){
+  for(int i = 0;  i < AD7794_CHANNEL_COUNT-2 ; i++){
     zero(i);
   }
 }
@@ -342,7 +352,7 @@ uint32_t AD7794::getReadingRaw(uint8_t ch)
   //Seems to work, TODO: figure out how to make this work on
   //non-standard SPI pins
   uint32_t t = millis();
-
+  
   #if defined (ESP8266) //Workaround until I figure out how to read the MISO pin status on the ESP8266
     delay(10);           //This delay is only appropriate for the fastest rate (470 Hz)
   #else
@@ -363,7 +373,7 @@ uint32_t AD7794::getReadingRaw(uint8_t ch)
 
 void AD7794::setActiveCh(uint8_t ch)
 {
-  if(ch < CHANNEL_COUNT){
+  if(ch < AD7794_CHANNEL_COUNT){
     currentCh = ch;
     buildConfReg();
     writeConfReg();
@@ -379,7 +389,7 @@ void AD7794::startConv()
   //Write out the mode reg, but leave CS asserted (LOW)
   //SPI.beginTransaction(spiSettings);
   digitalWrite(CS,LOW);
-  SPI.transfer(WRITE_MODE_REG);
+  SPI.transfer(AD7794_WRITE_MODE_REG);
   SPI.transfer(highByte(modeReg));
   SPI.transfer(lowByte(modeReg));
   //Don't end the transaction yet. for now this is going to have to hold on
@@ -396,7 +406,7 @@ void AD7794::buildConfReg()
   // Serial.print(confReg,BIN);
   // Serial.print(' ');
 
-  confReg = DEFAULT_CONF_REG; //wipe it back to default
+  confReg = AD7794_DEFAULT_CONF_REG; //wipe it back to default
 
   confReg = (getGainBits(Channel[currentCh].gain) << 8) | currentCh;
 
@@ -433,15 +443,9 @@ void AD7794::writeConfReg()
 {
   SPI.beginTransaction(spiSettings);
   digitalWrite(CS,LOW);
-  SPI.transfer(WRITE_CONF_REG);
+  SPI.transfer(AD7794_WRITE_CONF_REG);  
   
-  //SPI.transfer(highByte(confReg));
-  //SPI.transfer(lowByte(confReg));
-
-  //Just for debugging esp8266
-  //delay(1);
   SPI.transfer16(confReg);
-
 
   digitalWrite(CS,HIGH);
   SPI.endTransaction();
@@ -451,7 +455,7 @@ void AD7794::writeModeReg()
 {
   SPI.beginTransaction(spiSettings);
   digitalWrite(CS,LOW);
-  SPI.transfer(WRITE_MODE_REG);
+  SPI.transfer(AD7794_WRITE_MODE_REG);
   
   //SPI.transfer(highByte(modeReg));
   //SPI.transfer(lowByte(modeReg));
