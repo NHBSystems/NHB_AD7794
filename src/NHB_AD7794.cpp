@@ -66,7 +66,7 @@ AD7794::AD7794(uint8_t csPin, uint32_t spiFrequency, double refVoltage)
 
 void AD7794::begin()
 {
-  pinMode(AD7794_CS, OUTPUT); 
+  pinMode(CS, OUTPUT); 
 
   SPI.begin();
 
