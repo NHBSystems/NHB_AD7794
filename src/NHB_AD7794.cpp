@@ -66,6 +66,8 @@ AD7794::AD7794(uint8_t csPin, uint32_t spiFrequency, double refVoltage)
 
 void AD7794::begin()
 {
+  pinMode(AD7794_CS, OUTPUT); 
+
   SPI.begin();
 
   reset();
@@ -144,20 +146,20 @@ void AD7794::setUpdateRate(double rate)
   uint8_t bitMask;
   //Map requested to next available range
   if(rate <= 4.17)
-    {bitMask = 0x0F;}
+    {bitMask = 0x0F;}     //0x0F = 74 dB (50 Hz and 60 Hz) 
   else if(rate > 4.17 && rate <= 6.25)
-    {bitMask = 0x0E;}
+    {bitMask = 0x0E;}     //0x0E = 72 dB (50 Hz and 60 Hz)
   else if(rate > 6.25 && rate <= 8.33)
-    {bitMask = 0x0D;}
+    {bitMask = 0x0D;}     //0x0D = 70 dB (50 Hz and 60 Hz)
   else if(rate > 8.33 && rate <= 10)
-    {bitMask = 0x0C;}
+    {bitMask = 0x0C;}     //0x0C = 69 dB (50 Hz and 60 Hz) 
   else if(rate > 10 && rate <= 12.5)
-    {bitMask = 0x0B;}
-  else if(rate > 12.5 && rate <= 16.7)
-    //{bitMask = 0x0A;}     //This ones wierd 0x0A = 80 dB(50Hz)
-    {bitMask = 0x09;}   //or 0x09 = 65 dB(50Hx and 60Hz)
+    {bitMask = 0x0B;}     //0x0B = 66 dB (50 Hz and 60 Hz)
+  else if(rate > 12.5 && rate <= 16.7) //This ones wierd, have to pick one 
+    {bitMask = 0x0A;}     //0x0A = 65 dB(50Hx and 60Hz)
+    //{bitMask = 0x09;}   //0x09 = 80 dB(50Hz)65 dB(50Hx and 60Hz)
   else if(rate > 16.7 && rate <= 19.6)
-    {bitMask = 0x08;}
+    {bitMask = 0x08;}     //0x08 = 90 dB(60 Hz only) *Should be best option in US
   else if(rate > 19.6 && rate <= 33.2)
     {bitMask = 0x07;}
   else if(rate > 33.2 && rate <= 39)

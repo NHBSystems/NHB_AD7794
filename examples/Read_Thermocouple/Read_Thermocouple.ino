@@ -69,7 +69,7 @@ SOFTWARE.
 
 AD7794 adc(AD7794_CS, 4000000, 2.50);
 
-const float icTempCF = 4.0; //Correction factor for IC internal temp sensor
+const float icTempCF = 4.0; //Offset correction factor for IC internal temp sensor
                             //this will probably need to be adjusted 
 
 const float tcOffset = 0.0; //Offset correction factor for thermocouple

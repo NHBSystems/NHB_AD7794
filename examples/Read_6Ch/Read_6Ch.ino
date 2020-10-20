@@ -42,7 +42,7 @@
   // #define AD7794_CS    3 
   // #define EX_EN_PIN    9
 
-  //Fether M0 Basic Proto
+  //Feather M0 Basic Proto
   #define AD7794_CS  10  
   #define EX_EN_PIN  9  
   
@@ -58,7 +58,7 @@
 
 AD7794 adc(AD7794_CS, 1000000, 2.50);
 
-float readings[8], offsets[8]; //6 channels + temp and AVDD monitor
+float readings[8]; //6 channels + temp and AVDD monitor
 
 void setup() {
   
@@ -67,7 +67,7 @@ void setup() {
 
   while(!Serial);
  
-  pinMode(AD7794_CS, OUTPUT); //Need to do this
+  //pinMode(AD7794_CS, OUTPUT); //Need to do this
   pinMode(EX_EN_PIN, OUTPUT);
 
   digitalWrite(EX_EN_PIN,LOW);  //low  = 2.5 Vex ON
