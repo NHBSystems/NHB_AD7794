@@ -30,6 +30,7 @@
 #ifndef NHB_AD7794_h
 #define NHB_AD7794_h
 
+#include <Arduino.h>
 #include <SPI.h>
 
 #define AD7794_CHANNEL_COUNT           8    //6 + temp and AVDD Monitor

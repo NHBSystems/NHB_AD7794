@@ -42,7 +42,7 @@ AD7794::AD7794(uint8_t csPin, uint32_t spiFrequency, double refVoltage)
     spiSettings = SPISettings(spiFrequency,MSBFIRST,SPI_MODE2); 
   #else
     //Should be MODE3
-    spiSettings = SPISettings(spiFrequency,MSBFIRST,SPI_MODE3); 
+    spiSettings = SPISettings(spiFrequency,MSBFIRST,SPI_MODE3);     
   #endif
     
 
@@ -66,7 +66,8 @@ AD7794::AD7794(uint8_t csPin, uint32_t spiFrequency, double refVoltage)
 
 void AD7794::begin()
 {
-  pinMode(CS, OUTPUT); 
+  pinMode(CS, OUTPUT);
+  digitalWrite(CS,HIGH); 
 
   SPI.begin();
 
@@ -90,7 +91,7 @@ void AD7794::begin()
 //Write 32 1's to reset the chip
 void AD7794::reset()
 {
-  // Speed set to 4MHz, SPI mode set to MODE 3 and Bit order set to MSB first.
+  // Speed set to 4MHz, SPI mode set to MODE 3 and Bit order set to MSB first.  
   SPI.beginTransaction(spiSettings);
   digitalWrite(CS, LOW); //Assert CS
   for(uint8_t i=0;i<4;i++)
@@ -345,21 +346,22 @@ float AD7794::offset(uint8_t ch)
 // non blocking version with this chip on a shared SPI bus.
 uint32_t AD7794::getReadingRaw(uint8_t ch)
 {
-  SPI.beginTransaction(spiSettings);
-
+  
+  // setActiveCh() also calls SPI.beginTransaction(), This causes a lockup on esp32
+  // so the call has been moved down.
+  //SPI.beginTransaction(spiSettings);
+  
   setActiveCh(ch);
+  
+  SPI.beginTransaction(spiSettings);
   startConv();
-
-  //Attempt to replace delay with polling the DOUT/RDY (MISO) line
-  //Seems to work, TODO: figure out how to make this work on
-  //non-standard SPI pins
+  
   uint32_t t = millis();
   
   #if defined (ESP8266) //Workaround until I figure out how to read the MISO pin status on the ESP8266
-    delay(10);           //This delay is only appropriate for the fastest rate (470 Hz)
-  #else
-    while(digitalRead(MISO) == HIGH){
-    //while(digitalRead(12) == HIGH){ //ESP8266 troubleshooting
+    delay(10);           //This delay is only appropriate for the fastest rate (470 Hz)   
+  #else   
+    while(digitalRead(MISO) == HIGH){    
       if((millis() - t) >= convTimeout){        
         //Serial.print("getReadingRaw Timeout");
         break;
@@ -392,8 +394,11 @@ void AD7794::startConv()
   //SPI.beginTransaction(spiSettings);
   digitalWrite(CS,LOW);
   SPI.transfer(AD7794_WRITE_MODE_REG);
-  SPI.transfer(highByte(modeReg));
-  SPI.transfer(lowByte(modeReg));
+  // SPI.transfer(highByte(modeReg));
+  // SPI.transfer(lowByte(modeReg));
+
+  SPI.transfer16(modeReg);
+
   //Don't end the transaction yet. for now this is going to have to hold on
   //to the buss until the conversion is complete. not sure if there is a way around this
 }
@@ -403,18 +408,10 @@ void AD7794::startConv()
 
 //This has been changed and is untested
 void AD7794::buildConfReg()
-{
-  //prints added for troubleshooting
-  // Serial.print(confReg,BIN);
-  // Serial.print(' ');
-
+{  
   confReg = AD7794_DEFAULT_CONF_REG; //wipe it back to default
 
-  confReg = (getGainBits(Channel[currentCh].gain) << 8) | currentCh;
-
-  // Serial.print(currentCh);
-  // Serial.print("confReg: ");
-  // Serial.println(confReg,BIN);
+  confReg = (getGainBits(Channel[currentCh].gain) << 8) | currentCh;  
   
   if(Channel[currentCh].vBiasEnabled && (currentCh < 3)){
     uint8_t biasBits = currentCh + 1; 
@@ -426,44 +423,28 @@ void AD7794::buildConfReg()
   confReg |= (Channel[currentCh].isBuffered << 4);
 
   //Set reference select bits
-  confReg |= (Channel[currentCh].refMode << 6);
-
-  // Serial.print(currentCh);
-  // Serial.print(" Gain: ");
-  // Serial.print(Channel[currentCh].gain);
-  // Serial.print(" gainBits: ");
-  // Serial.print(getGainBits(Channel[currentCh].gain));
-  // Serial.print(" confReg: ");
-  // Serial.println(confReg,BIN);
-
-  // Serial.int(confReg,BIN);
-  // Serial.int(' ');
+  confReg |= (Channel[currentCh].refMode << 6);   
 
 }
 
 void AD7794::writeConfReg()
-{
+{  
   SPI.beginTransaction(spiSettings);
   digitalWrite(CS,LOW);
   SPI.transfer(AD7794_WRITE_CONF_REG);  
   
   SPI.transfer16(confReg);
 
-  digitalWrite(CS,HIGH);
+  digitalWrite(CS,HIGH); 
   SPI.endTransaction();
 }
 
 void AD7794::writeModeReg()
-{
+{  
   SPI.beginTransaction(spiSettings);
-  digitalWrite(CS,LOW);
-  SPI.transfer(AD7794_WRITE_MODE_REG);
+  digitalWrite(CS,LOW);  
+  SPI.transfer(AD7794_WRITE_MODE_REG);  
   
-  //SPI.transfer(highByte(modeReg));
-  //SPI.transfer(lowByte(modeReg));
-
-  //Just for debugging esp8266
-  //delay(1);
   SPI.transfer16(modeReg);
 
   digitalWrite(CS,HIGH);
