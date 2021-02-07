@@ -33,30 +33,33 @@
 #include <SPI.h>
 #include "NHB_AD7794.h"
 
-#if defined (ESP8266)
-  #define AD7794_CS   16 //<- Should try this on 15 again
-  #define EX_EN_PIN    0
-#else
-  
-  //Teensy 3.2 on Feather adapter
-  // #define AD7794_CS    3 
-  // #define EX_EN_PIN    9
 
-  //Feather M0 Basic Proto
-  #define AD7794_CS  10  
-  #define EX_EN_PIN  9  
+//You need to set the pins for your Feather here
+//EX_EN_PIN only matters if you have configured the
+//EX_EN jumper to controll excitation from your board
+
+//Teensy 3.2 on Feather adapter
+// #define AD7794_CS    3 
+// #define EX_EN_PIN    9
+
+//Feather M0 Basic Proto
+// #define AD7794_CS  10  
+// #define EX_EN_PIN  9  
+
+
+#define AD7794_CS   15 
+#define EX_EN_PIN    0
+
   
-#endif
 
 // Feather Huzzah ESP8266
-// Note: It looks like the AD7794 only works with the ESP8266 when
-// SPI Mode is set to MODE_2. This doesn't make much sense because
-// Neither Mode_2 nor Mode_3 are supposed to be supported. Also, for
-// some reason I cant read the MISO pin to see when a conversion is
-// complete. For now I put a 6 mS delay in the library when it is
+// Note: When using the ESP8266, only the fastest update rate
+// setting is supported for now. There is an issue where the MISO
+// pin can not be read to see when a conversion is complete. As
+// an ugly workaround I put a 10 mS delay in the library when it is
 // compiled for the ESP8266 target.
 
-AD7794 adc(AD7794_CS, 1000000, 2.50);
+AD7794 adc(AD7794_CS, 4000000, 2.50);
 
 float readings[8]; //6 channels + temp and AVDD monitor
 
@@ -67,10 +70,9 @@ void setup() {
 
   while(!Serial);
  
-  //pinMode(AD7794_CS, OUTPUT); //Need to do this
-  pinMode(EX_EN_PIN, OUTPUT);
-
-  digitalWrite(EX_EN_PIN,LOW);  //low  = 2.5 Vex ON
+  //Uncomment next 2 lines if Jumper configured for EX control
+  // pinMode(EX_EN_PIN, OUTPUT);
+  // digitalWrite(EX_EN_PIN,LOW);  //low  = 2.5 Vex ON
 
   adc.begin();
   
@@ -90,12 +92,10 @@ void setup() {
 
   delay(100);  
   
-  //get readings and auto zero on startup
-    
-  adc.zero(); //Zero out all channels
+  //Uncomment to zero out all channels    
+  //adc.zero(); //Zero out all channels
 
 }
-
 
 void loop() {
 

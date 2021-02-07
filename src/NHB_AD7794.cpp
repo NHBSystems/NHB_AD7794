@@ -35,16 +35,13 @@ AD7794::AD7794(uint8_t csPin, uint32_t spiFrequency, double refVoltage)
 {
   //pinMode(csPin, OUTPUT);
   CS = csPin;
+  
 
-  #if defined (ESP8266)
-    //For some reason we need to use MODE2 on ESP8266, whitch makes no sense at all
-    //In fact, neither MODE3 or MODE2 are supposed to be supported!
-    spiSettings = SPISettings(spiFrequency,MSBFIRST,SPI_MODE2); 
-  #else
-    //Should be MODE3
-    spiSettings = SPISettings(spiFrequency,MSBFIRST,SPI_MODE3);     
-  #endif
-    
+  //Older versions of the ESP8266 core had a bug that required setting
+  //SPI_MODE2 here. That seems to have been resolved.
+
+  //Should be MODE3
+  spiSettings = SPISettings(spiFrequency,MSBFIRST,SPI_MODE3);    
 
   //Default register settings
   modeReg = AD7794_DEFAULT_MODE_REG;     //Single conversion mode, Fadc = 470Hz
@@ -58,10 +55,7 @@ AD7794::AD7794(uint8_t csPin, uint32_t spiFrequency, double refVoltage)
     if(refVoltage == AD7794_INTERNAL_REF_V){
       Channel[i].refMode = AD7794_REF_INT;           
     }
-  }
-
-  
-  
+  }    
 }
 
 void AD7794::begin()
@@ -87,7 +81,7 @@ void AD7794::begin()
 
   //TODO: add any other init code here
 }
-////////////////////////////////////////////////////////////////////////
+
 //Write 32 1's to reset the chip
 void AD7794::reset()
 {

@@ -9,6 +9,9 @@
   1 between the GND (or VEX-) terminal and the TC- terminal and 1 between VCC
   (or VEX+) terminal and the TC+ terminal. (See diagram in the extras folder)
 
+  UPDATE: The boards now include bias resistors on the bottom side that can
+  be enabled with solder jumpers.
+
   This file is part of the NHB_AD7794 library.
 
   MIT License
@@ -41,31 +44,27 @@ SOFTWARE.
 //EX_EN_PIN only matters if you have configured the
 //EX_EN jumper to controll excitation from your board
 
-#if defined (ESP8266)
-  #define AD7794_CS   16 
-  #define EX_EN_PIN    0
-#else
-  //Teensy 3.2 on Feather adapter
-  //#define AD7794_CS    3 
-  //#define EX_EN_PIN    9
 
-  //Feather M0 Basic Proto
-  #define AD7794_CS  10  
-  #define EX_EN_PIN  9 
-  
-#endif
+//Teensy 3.2 on Feather adapter
+//#define AD7794_CS    3 
+//#define EX_EN_PIN    9
+
+//Pins for Feather M0 Basic Proto
+#define AD7794_CS  10  
+#define EX_EN_PIN  9    
+
 
 #define TC_ADC_CHANNEL      0
 #define IC_TEMP_ADC_CHANNEL 6
 
 
-// Feather Huzzah ESP8266 Note:
-// It looks like the AD7794 only works with the ESP8266 when
-// SPI Mode is set to MODE_2. This doesn't make much sense because
-// Neither Mode_2 nor Mode_3 are supposed to be supported. Also, for
-// some reason I cant read the MISO pin to see when a conversion is
-// complete. For now I put a 10 mS delay in the library when it is
+// Feather Huzzah ESP8266
+// Note: When using the ESP8266, only the fastest update rate
+// setting is supported for now. There is an issue where the MISO
+// pin can not be read to see when a conversion is complete. As
+// an ugly workaround I put a 10 mS delay in the library when it is
 // compiled for the ESP8266 target.
+
 
 AD7794 adc(AD7794_CS, 4000000, 2.50);
 
@@ -73,7 +72,7 @@ const float icTempCF = 4.0; //Offset correction factor for IC internal temp sens
                             //this will probably need to be adjusted 
 
 const float tcOffset = 0.0; //Offset correction factor for thermocouple
-                            //this will probably need to be adjusted
+                            //this may need to be adjusted
 
 
 float EMA_a = 0.1;
@@ -85,10 +84,8 @@ void setup() {
   //adc.begin(); //Added while troubleshooting - 5-6-18
 
   while(!Serial);
- 
-  pinMode(AD7794_CS, OUTPUT); //Need to do this
-
-  //Only needed if Jumper configured for EX control
+   
+  //Uncomment next 2 lines if Jumper configured for EX control
   //pinMode(EX_EN_PIN, OUTPUT);
   //digitalWrite(EX_EN_PIN,LOW);  //low  = 2.5 Vex ON
 
@@ -102,9 +99,7 @@ void setup() {
   adc.setBipolar(TC_ADC_CHANNEL,true);  
   adc.setGain(TC_ADC_CHANNEL,32);
   adc.setEnabled(TC_ADC_CHANNEL,true);
-
-  float junk = adc.read(0); 
-  
+    
 }
 
 void loop() {
@@ -161,7 +156,7 @@ float Thermocouple_Ktype_VoltageToTempDegC(float voltage) {
    // http://srdata.nist.gov/its90/type_k/kcoefficients_inverse.html
    float coef_1[] = {0, 2.5173462e1, -1.1662878, -1.0833638, -8.9773540e-1};            // coefficients (in mV) for -200 to 0C, -5.891mv to 0mv
    float coef_2[] = {0, 2.508355e1, 7.860106e-2, -2.503131e-1, 8.315270e-2};            // coefficients (in mV) for 0 to 500C, 0mv to 20.644mv
-   float coef_3[] = {-1.318058e2, 4.830222e1, -1.646031, 5.464731e-2, -9.650715e-4};    //whoa, that's hot...
+   float coef_3[] = {-1.318058e2, 4.830222e1, -1.646031, 5.464731e-2, -9.650715e-4};    // whoa, that's hot...
    int i = 5;  // number of coefficients in array
    float temperature;
 
@@ -180,8 +175,8 @@ float Thermocouple_Ktype_VoltageToTempDegC(float voltage) {
 
 float Thermocouple_Ktype_TempToVoltageDegC(float temperature) {
   // https://srdata.nist.gov/its90/type_k/kcoefficients.html
-  float coef_1[] = {0, 0.3945013e-1, 0.2362237e-4, -0.3285891e-6, -0.4990483e-8};            // coefficients (in mV) for -270 to 0C, -5.891mv to 0mv
-  float coef_2[] = {-0.17600414e-1, 0.38921205e-1, 0.1855877e-4, -0.9945759e-7, 0.31840946e-9};            // coefficients (in mV) for 0 to 1372C, 0mv to ....
+  float coef_1[] = {0, 0.3945013e-1, 0.2362237e-4, -0.3285891e-6, -0.4990483e-8};               // coefficients (in mV) for -270 to 0C, -5.891mv to 0mv
+  float coef_2[] = {-0.17600414e-1, 0.38921205e-1, 0.1855877e-4, -0.9945759e-7, 0.31840946e-9}; // coefficients (in mV) for 0 to 1372C, 0mv to ....
   float a_coef[] = {0.1185976, -0.1183432e-3, 0.1269686e3};
   int i = 5;  // number of coefficients in array
 
