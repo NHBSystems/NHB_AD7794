@@ -43,12 +43,12 @@
 // #define EX_EN_PIN    9
 
 //Feather M0 Basic Proto
-// #define AD7794_CS  10  
-// #define EX_EN_PIN  9  
+#define AD7794_CS  10  
+#define EX_EN_PIN  9  
 
-
-#define AD7794_CS   15 
-#define EX_EN_PIN    0
+// Huzzah ESP8266
+// #define AD7794_CS   15 
+// #define EX_EN_PIN    0
 
   
 
