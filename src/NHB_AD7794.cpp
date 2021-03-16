@@ -79,7 +79,7 @@ void AD7794::begin()
 
   setActiveCh(0); //Set channel back to 0
 
-  //TODO: add any other init code here
+  read(0); //Take a through away reading because the very first value read is usually junk
 }
 
 //Write 32 1's to reset the chip
@@ -309,7 +309,7 @@ void AD7794::zero(uint8_t ch)
 {  
   
   if(Channel[ch].isEnabled == true){
-    read(ch); //Take a through away reading first -workaround
+    //read(ch); //Take a throw away reading first -This is now done in begin,shouldn't be needed here anymore
     
     Channel[ch].offset = read(ch);    
   }
@@ -319,9 +319,7 @@ void AD7794::zero(uint8_t ch)
    channels. (NOT temperature an AVDD monitor)
 */
 void AD7794::zero()
-{
-  read(0); //Take a through away reading first -workaround
-
+{ 
   for(int i = 0;  i < AD7794_CHANNEL_COUNT-2 ; i++){
     zero(i);
   }
