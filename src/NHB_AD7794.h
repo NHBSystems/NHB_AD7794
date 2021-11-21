@@ -39,9 +39,11 @@
 #define AD7794_WRITE_MODE_REG       0x08    //selects mode reg for writing
 #define AD7794_WRITE_CONF_REG       0x10    //selects conf reg for writing
 #define AD7794_READ_DATA_REG        0x58    //selects data reg for reading
+#define AD7794_READ_STATUS_REG      0x40    //selects status register for reading //Added 11-14-2021
 
 #define AD7794_DEFAULT_MODE_REG   0x2001    //Single conversion mode, Fadc = 470Hz
 #define AD7794_DEFAULT_CONF_REG   0x0010    //CH 0 - Bipolar, Gain = 1, Input buffer enabled
+#define AD7794_CHOP_DISABLE       0x0210    //Chop disable bits in mode register
   
 #define AD7794_ADC_MAX_UP     16777216
 #define AD7794_ADC_MAX_BP     8388608
@@ -51,6 +53,17 @@
 #define AD7794_REF_EXT_2          1
 #define AD7794_REF_INT            2
 
+enum AD7794_OperatingModes {
+    AD7794_OpMode_Continuous = 0,           // Continuous conversion mode (default). Only 1 channel 
+    AD7794_OpMode_SingleConv,               // Single conversion mode.
+    // *** THESE OPTIONS NOT IMPLEMENTED YET ***
+    // AD7794_OpMode_Idle,                     // Idle mode.
+    // AD7794_OpMode_PowerDown,                // Power-down mode.
+    // AD7794_OpMode_InternalZeroCalibration,  // Internal zero-scale (offset) calibration. 
+    // AD7794_OpMode_InternalFsCalibration,    // Internal full-scale. 
+    // AD7794_OpMode_SystemZeroCalibration,    // System zero-scale (offset) calibration. 
+    // AD7794_OpMode_SystemFsCalibration       // System full-scale.
+};
 
 struct channelSettings
 {
@@ -83,7 +96,10 @@ class AD7794
 
     //void setUpdateRate(uint8_t bitMask);
     void setUpdateRate(double rate);
-    void setConvMode(bool isSingle);
+    //void setConvMode(bool isSingle); //Deprecated
+    void setMode(AD7794_OperatingModes mode); //Added 11-15-2021
+    void setChopEnabled(bool enabled = true); //Added 11-14-2021
+    void setActiveCh(uint8_t ch);
 
     uint32_t getReadingRaw(uint8_t ch);
     //float getReadingVolts(uint8_t ch);
@@ -102,10 +118,10 @@ class AD7794
     void writeConfReg();
     void writeModeReg();
     void buildConfReg();
-    void setActiveCh(uint8_t ch);
+    //void setActiveCh(uint8_t ch);
     uint8_t getGainBits(uint8_t gain);
 
-    
+    int waitForConvReady(uint32_t timeout); //Added 11-14-2021
 
     uint8_t CS;
     uint8_t currentCh;    

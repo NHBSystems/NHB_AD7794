@@ -170,26 +170,45 @@ void AD7794::setUpdateRate(double rate)
     else if(rate > 242)
       {bitMask = 0x01;} //anything above 242 set to 470 Hz
 
-  modeReg &= 0xFF00; //Zero off low byte
+  modeReg &= 0xFFF0; //Zero off low nibble
   modeReg |= bitMask;
 
   writeModeReg();
   //TODO: Put table from datasheet in comments, in header file
 }
 
-void AD7794::setConvMode(bool isSingle)
-{
-  if(isSingle == true){
+//Deprecated
+// void AD7794::setConvMode(bool isSingle)
+// {
+//   if(isSingle == true){
+//     isSnglConvMode = true;
+//     modeReg &= 0x00FF;
+//     modeReg |= 0x2000;
+//   }
+//   else{
+//     isSnglConvMode = false;
+//     modeReg &= 0x00FF;
+//   }
+
+//   writeModeReg();
+// }
+
+void AD7794::setMode(AD7794_OperatingModes mode){
+
+  //Currently only continuous and single conversion mode are supported
+  modeReg &= 0x1FFF;
+  modeReg |= mode << 1;
+
+  //Temporary hack, need to change all references to isSglConvMode
+  if(mode == AD7794_OpMode_SingleConv){
     isSnglConvMode = true;
-    modeReg &= 0x00FF;
-    modeReg |= 0x2000;
   }
   else{
     isSnglConvMode = false;
-    modeReg &= 0x00FF;
   }
 
   writeModeReg();
+
 }
 
 //Enable internal bias voltage for specified channel
@@ -215,6 +234,19 @@ void AD7794::setRefMode(uint8_t ch, uint8_t mode){
 
 }
 
+//Added 11-14-2021
+void AD7794::setChopEnabled(bool enabled){
+  // 0x0210 = chopp disabled
+  if(enabled == true){    
+    modeReg &= ~ AD7794_CHOP_DISABLE;    
+  }
+  else{    
+    modeReg |= AD7794_CHOP_DISABLE;
+  }
+
+  writeModeReg();
+}
+
 // OK, for now I'm not going to handle the spi transaction inside the startConversion()
 // and getConvResult() functions. They are very low level and the behavior is different
 // depending on conversion mode (and other things ?). think I will make these private
@@ -238,11 +270,10 @@ uint32_t AD7794::getConvResult()
   result = result | inByte;
 
   //De-assert CS if not in continous conversion mode
-  if(isSnglConvMode == true){
+  if(isSnglConvMode){
     digitalWrite(CS,HIGH);
   }
 
-  //SPI.endTransaction(); //Need to look into how to handle continous conversion mode
   return result;
 }
 
@@ -333,37 +364,71 @@ float AD7794::offset(uint8_t ch)
   return Channel[ch].offset;
 }
 
+//Added 11-14-2021
+int AD7794::waitForConvReady (uint32_t timeout){
+  uint8_t inByte;
+  uint32_t t = millis();
+
+  while((millis() - t) <= timeout){
+    
+    SPI.transfer(AD7794_READ_STATUS_REG);
+
+    //Read status register
+    inByte = SPI.transfer(0xFF); //dummy byte
+    if((inByte & 0x80) == 0){
+      //bit cleared, conversion is ready
+      return 0;
+    }
+  }
+  return -1;
+}
 
 // This function is BLOCKING. I'm not sure if it is even possible to make a
 // non blocking version with this chip on a shared SPI bus.
 uint32_t AD7794::getReadingRaw(uint8_t ch)
 {
-  
+  static bool contConvStarted = false;
   // setActiveCh() also calls SPI.beginTransaction(), This causes a lockup on esp32
   // so the call has been moved down.
   //SPI.beginTransaction(spiSettings);
   
-  setActiveCh(ch);
+  if(isSnglConvMode || !contConvStarted){ //Added 11-14-2021
+    
+    setActiveCh(ch);
   
-  SPI.beginTransaction(spiSettings);
-  startConv();
+    SPI.beginTransaction(spiSettings); 
   
-  uint32_t t = millis();
+    startConv();
+    contConvStarted = true;
+  }
   
-  #if defined (ESP8266) //Workaround until I figure out how to read the MISO pin status on the ESP8266
-    delay(10);           //This delay is only appropriate for the fastest rate (470 Hz)   
-  #else   
-    while(digitalRead(MISO) == HIGH){    
-      if((millis() - t) >= convTimeout){        
-        //Serial.print("getReadingRaw Timeout");
-        break;
-      }  
-    }
-  #endif
+  if(!isSnglConvMode){ //Added 11-14-2021
+    digitalWrite(CS,LOW); //It seems I need to re-assert this. Not sure why, I don't think it gets set HIGH anywhere when in continuous read mode ????
+  }
+  //uint32_t t = millis();
+  
+  // #if defined (ESP8266) //Workaround until I figure out how to read the MISO pin status on the ESP8266
+  //   delay(10);           //This delay is only appropriate for the fastest rate (470 Hz)   
+  // #else   
+    
+    //Commented out to test status reg read method
+    // while(digitalRead(MISO) == HIGH){    
+    //   if((millis() - t) >= convTimeout){        
+    //     //Serial.print("getReadingRaw Timeout");
+    //     break;
+    //   }  
+    // }
+
+    //Test status read method NOTE: Should do something with return value (-1 if timeout)
+    waitForConvReady(convTimeout);
+
+  // #endif
 
   uint32_t adcRaw = getConvResult();
 
-  SPI.endTransaction();
+  if(isSnglConvMode){ //Added 11-14-2021
+    SPI.endTransaction();
+  }
   return adcRaw;
 }
 

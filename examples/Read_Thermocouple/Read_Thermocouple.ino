@@ -34,7 +34,7 @@
   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+  SOFTWARE.
 */
 
 #include <SPI.h>
@@ -58,30 +58,24 @@ SOFTWARE.
 #define IC_TEMP_ADC_CHANNEL 6
 
 
-// Feather Huzzah ESP8266
-// Note: When using the ESP8266, only the fastest update rate
-// setting is supported for now. There is an issue where the MISO
-// pin can not be read to see when a conversion is complete. As
-// an ugly workaround I put a 10 mS delay in the library when it is
-// compiled for the ESP8266 target.
-
-
 AD7794 adc(AD7794_CS, 4000000, 2.50);
 
-const float icTempCF = 4.0; //Offset correction factor for IC internal temp sensor
-                            //this will probably need to be adjusted 
 
-const float tcOffset = 0.0; //Offset correction factor for thermocouple
-                            //this may need to be adjusted
+//Offset correction for the IC internal temp sensor
+//this will may need to be adjusted. Some chips seem to have
+//some offset in the measurment from the on chip sensor 
+const float icTempOffset = 0.0; 
 
 
+//For moving avg filter below
 float EMA_a = 0.1;
 float tcEMA = 0.0;
 
+
+
 void setup() {
-  // put your setup code here, to run once:
-  Serial.begin(115200);
-  //adc.begin(); //Added while troubleshooting - 5-6-18
+  
+  Serial.begin(115200);  
 
   while(!Serial);
    
@@ -113,18 +107,16 @@ void loop() {
   // float degK = volts/0.00081; //Sensitivity = 0.81 mv/DegC
   // float degC = degK - 273;
 
-  float icTemp = adc.read(IC_TEMP_ADC_CHANNEL) + icTempCF;
+  float icTemp = adc.read(IC_TEMP_ADC_CHANNEL) + icTempOffset;
 
   float referenceVoltage = Thermocouple_Ktype_TempToVoltageDegC(icTemp);
 
-
   
   float tc = adc.read(TC_ADC_CHANNEL);
-  //delay(10);
-  //uint32_t tcRaw = adc.getReadingRaw(1);
+  
 
   float compensatedVoltage = tc + referenceVoltage;
-  float compensatedTemperature = Thermocouple_Ktype_VoltageToTempDegC(compensatedVoltage) + tcOffset;
+  float compensatedTemperature = Thermocouple_Ktype_VoltageToTempDegC(compensatedVoltage);
 
   //Try a simple exponential moving average filter
   //Formula from: //https://www.norwegiancreations.com/2015/10/tutorial-potentiometers-with-arduino-and-filtering/
@@ -202,21 +194,4 @@ float power_series(int n, float input, float coef[])
            sum=sum+(pow(input, (float)i)*coef[i]);
       return(sum);
  }
-
- 
-void Thermocouple_PrintResults(float referenceJuntionTemp, float relativeTemp, char units[]) {
-
-  
-
-  Serial.print("Thermocouple is measuring ");
-  Serial.print(relativeTemp + referenceJuntionTemp);
-  Serial.print(units);
-  Serial.print(", which is calculated from relativeTemp ("); 
-  Serial.print(relativeTemp);
-  Serial.print(units);
-  Serial.print(") + reference juction temp (");
-  Serial.print(referenceJuntionTemp, 2);
-  Serial.print(units);
-  Serial.println(")\n\n");
-}
 

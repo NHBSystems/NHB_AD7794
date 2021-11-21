@@ -50,14 +50,6 @@
 // #define AD7794_CS   15 
 // #define EX_EN_PIN    0
 
-  
-
-// Feather Huzzah ESP8266
-// Note: When using the ESP8266, only the fastest update rate
-// setting is supported for now. There is an issue where the MISO
-// pin can not be read to see when a conversion is complete. As
-// an ugly workaround I put a 10 mS delay in the library when it is
-// compiled for the ESP8266 target.
 
 AD7794 adc(AD7794_CS, 4000000, 2.50);
 
@@ -70,15 +62,25 @@ void setup() {
 
   while(!Serial);
  
-  //Uncomment next 2 lines if Jumper configured for EX control
-  // pinMode(EX_EN_PIN, OUTPUT);
-  // digitalWrite(EX_EN_PIN,LOW);  //low  = 2.5 Vex ON
+  // Uncomment next 2 lines if Jumper configured for EX control
+  //pinMode(EX_EN_PIN, OUTPUT);
+  //digitalWrite(EX_EN_PIN,LOW);  //low  = 2.5 Vex ON
 
   adc.begin();
   
   delay(100);
   
   adc.setUpdateRate(470);
+
+
+  // Disabling "chop" reduces the settling time by a factor of 2, which will 
+  // increase the effective sampling rate (the ADC conversion rate is 
+  // the same, but the setting time is half). However, there may be more drift in 
+  // the readings, and the maximum comon mode voltage is slightly reduced. See the 
+  // datasheet for details. Default is enabled. Uncomment line below to disable
+  //adc.setChopEnabled(false); 
+
+
 
   for(int i=0; i < 6; i++){
     adc.setBipolar(i,true);

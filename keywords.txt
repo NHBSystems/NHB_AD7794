@@ -19,7 +19,8 @@ setEnabled  KEYWORD2
 setVBias    KEYWORD2
 setRefMode  KEYWORD2
 setUpdateRate   KEYWORD2
-setConvMode KEYWORD2
+setMode KEYWORD2
+setChopEnabled KEYWORD2
 getReadingRaw   KEYWORD2
 TempSensorRawToDegC KEYWORD2
 read    KEYWORD2
