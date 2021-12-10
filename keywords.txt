@@ -5,27 +5,27 @@
 #######################################
 # Datatypes (KEYWORD1)
 #######################################
-
+AD7794	KEYWORD1
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################
 
-begin   KEYWORD2
-reset   KEYWORD2
-setBipolar  KEYWORD2
-setInputBuffer  KEYWORD2
-setGain KEYWORD2
-setEnabled  KEYWORD2
-setVBias    KEYWORD2
-setRefMode  KEYWORD2
-setUpdateRate   KEYWORD2
-setMode KEYWORD2
-setChopEnabled KEYWORD2
-getReadingRaw   KEYWORD2
-TempSensorRawToDegC KEYWORD2
-read    KEYWORD2
-zero    KEYWORD2
-offset  KEYWORD2
+begin	KEYWORD2
+reset	KEYWORD2
+setBipolar	KEYWORD2
+setInputBuffer	KEYWORD2
+setGain	KEYWORD2
+setEnabled	KEYWORD2
+setVBias	KEYWORD2
+setRefMode	KEYWORD2
+setUpdateRate	KEYWORD2
+setMode	KEYWORD2
+setChopEnabled	KEYWORD2
+getReadingRaw	KEYWORD2
+TempSensorRawToDegC	KEYWORD2
+read	KEYWORD2
+zero	KEYWORD2
+offset	KEYWORD2
 
 #######################################
 # Instances (KEYWORD2)
