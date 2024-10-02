@@ -45,7 +45,7 @@
 #define AD7794_DEFAULT_CONF_REG   0x0010    //CH 0 - Bipolar, Gain = 1, Input buffer enabled
 #define AD7794_CHOP_DISABLE       0x0210    //Chop disable bits in mode register
   
-#define AD7794_ADC_MAX_UP     16777216
+#define AD7794_ADC_MAX_UP     16777216U
 #define AD7794_ADC_MAX_BP     8388608
 
 #define AD7794_INTERNAL_REF_V  1.17
